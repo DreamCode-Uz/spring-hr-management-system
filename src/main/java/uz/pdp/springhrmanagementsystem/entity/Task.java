@@ -1,2 +1,58 @@
-package uz.pdp.springhrmanagementsystem.entity;public class Task {
+package uz.pdp.springhrmanagementsystem.entity;
+
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
+import org.springframework.data.annotation.CreatedBy;
+import org.springframework.data.annotation.LastModifiedBy;
+import org.springframework.format.annotation.DateTimeFormat;
+import uz.pdp.springhrmanagementsystem.entity.enums.TaskStatus;
+
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.Id;
+import java.sql.Timestamp;
+import java.util.Date;
+import java.util.UUID;
+
+@AllArgsConstructor
+@NoArgsConstructor
+@Data
+@Entity
+public class Task {
+    @Id
+    @GeneratedValue
+    private UUID id;
+
+    @Column(nullable = false)
+    private String name;
+
+    @Column(nullable = false)
+    private String description;
+
+    @Column(name = "deadline", nullable = false)
+    @DateTimeFormat(pattern = "yyyy-MM-dd")
+    private Date endTime;
+
+    @Column(nullable = false)
+    private TaskStatus status;
+
+    private boolean acceptedByOwner = false;
+
+    @Column(updatable = false)
+    @CreationTimestamp
+    private Timestamp createdAt;
+
+    @UpdateTimestamp
+    private Timestamp updateAt;
+
+    @Column(updatable = false)
+    @CreatedBy
+    private UUID createdBy;
+
+    @LastModifiedBy
+    private UUID updatedBy;
 }
