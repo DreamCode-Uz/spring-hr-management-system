@@ -1,5 +1,6 @@
 package uz.pdp.springhrmanagementsystem.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -18,6 +19,7 @@ public class Role implements GrantedAuthority {
     private Integer id;
 
     @Column(unique = true)
+    @JsonIgnore
     @Enumerated(EnumType.STRING)
     private RoleList role;
 

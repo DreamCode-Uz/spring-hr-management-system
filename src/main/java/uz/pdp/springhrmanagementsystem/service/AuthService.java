@@ -1,6 +1,7 @@
 package uz.pdp.springhrmanagementsystem.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
@@ -25,8 +26,7 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-import static org.springframework.http.ResponseEntity.ok;
-import static org.springframework.http.ResponseEntity.status;
+import static org.springframework.http.ResponseEntity.*;
 
 @Service
 public class AuthService implements UserDetailsService {
@@ -36,7 +36,7 @@ public class AuthService implements UserDetailsService {
     private final JWTProvider jwtProvider;
 
     @Autowired
-    public AuthService(UserRepository repository, RoleRepository roleRepository, AuthenticationManager authenticationManager, JWTProvider jwtProvider) {
+    public AuthService(UserRepository repository, RoleRepository roleRepository, @Lazy AuthenticationManager authenticationManager, JWTProvider jwtProvider) {
         this.repository = repository;
         this.roleRepository = roleRepository;
         this.authenticationManager = authenticationManager;
@@ -72,5 +72,19 @@ public class AuthService implements UserDetailsService {
         } catch (BadCredentialsException e) {
             return status(401).body("Password or login error. Please check and try again");
         }
+    }
+
+    public ResponseEntity<?> verifyEmail(String email, String emailCode) {
+        Optional<User> optionalUser = repository.findUserByEmail(email);
+        if (!optionalUser.isPresent()) return notFound().build();
+        User user = optionalUser.get();
+        if (user.isEnabled()) return ok("Account allaqachon activelashtirilgan");
+        if (user.getEmailCode().equals(emailCode)) {
+            user.setEmailCode(null);
+            repository.save(user);
+            return ok("Account muvaffaqiyatli activelashtirildi.");
+        }
+//        SEND EMAIL
+        return ok("Email tasdiqlash code xato. Biz emailingizga qayta link jo'natdik");
     }
 }

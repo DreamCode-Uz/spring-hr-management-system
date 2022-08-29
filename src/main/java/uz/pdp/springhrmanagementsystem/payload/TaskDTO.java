@@ -19,4 +19,7 @@ public class TaskDTO {
     private Date deadline;
     @NotNull
     private UUID ownerId;
+
+    @NotNull
+    private Integer id;
 }

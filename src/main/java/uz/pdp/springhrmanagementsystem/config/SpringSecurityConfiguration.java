@@ -1,12 +1,12 @@
-package uz.pdp.springhrmanagementsystem.audit;
+package uz.pdp.springhrmanagementsystem.config;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.data.domain.AuditorAware;
 import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -15,6 +15,8 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import uz.pdp.springhrmanagementsystem.audit.SpringSecurityAuditingAware;
+import uz.pdp.springhrmanagementsystem.security.jwt.JWTFilter;
 import uz.pdp.springhrmanagementsystem.service.AuthService;
 
 import java.util.UUID;
@@ -25,10 +27,12 @@ import java.util.UUID;
 public class SpringSecurityConfiguration {
 
     private final AuthService authService;
+    private final JWTFilter jwtFilter;
 
     @Autowired
-    public SpringSecurityConfiguration(AuthService authService) {
+    public SpringSecurityConfiguration(@Lazy AuthService authService, @Lazy JWTFilter jwtFilter) {
         this.authService = authService;
+        this.jwtFilter = jwtFilter;
     }
 
     @Bean
@@ -41,11 +45,6 @@ public class SpringSecurityConfiguration {
         return new BCryptPasswordEncoder(8);
     }
 
-//    @Bean
-//    AuthenticationManager authenticationManager(AuthenticationManagerBuilder builder, PasswordEncoder passwordEncoder) throws Exception {
-//        return builder.userDetailsService(authService).passwordEncoder(passwordEncoder).and().build();
-//    }
-
     @Bean
     AuthenticationManager authenticationManager(AuthenticationConfiguration configuration) throws Exception {
         return configuration.getAuthenticationManager();
@@ -56,11 +55,11 @@ public class SpringSecurityConfiguration {
         http
                 .csrf().disable()
                 .authorizeRequests()
-                .antMatchers("/api/auth/login", "/api/auth/verify").permitAll()
+                .antMatchers("/api/auth/login", "/api/auth/register", "/api/auth/verify").permitAll()
                 .anyRequest()
                 .authenticated()
                 .and()
-//                .addFilterBefore(null, UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
                 .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS);
         return http.build();
     }

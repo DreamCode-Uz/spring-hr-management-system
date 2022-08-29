@@ -20,7 +20,7 @@ public class JWTProvider {
         User principal = (User) authentication.getPrincipal();
         return Jwts.builder()
                 .setSubject(principal.getEmail())
-                .claim("roles", principal.getRoles())
+                .claim("roles", principal.getAuthorities())
                 .setId(principal.getId().toString())
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(new Date().getTime() + expiration * 1000))
@@ -46,7 +46,7 @@ public class JWTProvider {
         return false;
     }
 
-    public Claims getUsernameFromToken(String token) {
+    public Claims getClaimsObjectFromToken(String token) {
         return Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(token).getBody();
     }
 }
