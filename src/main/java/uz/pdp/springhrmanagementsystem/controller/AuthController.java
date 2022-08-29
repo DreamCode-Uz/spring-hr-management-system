@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import uz.pdp.springhrmanagementsystem.payload.LoginDTO;
+import uz.pdp.springhrmanagementsystem.payload.RegisterDTO;
 import uz.pdp.springhrmanagementsystem.service.AuthService;
 
 import javax.validation.Valid;
@@ -24,13 +25,13 @@ public class AuthController {
         return service.login(dto);
     }
 
-    @GetMapping("/users")
-    public ResponseEntity<?> getAllUser(@RequestParam(name = "page", defaultValue = "0") Integer page, @RequestParam(name = "size", defaultValue = "10") Integer size) {
-        return service.getUsers(page, size);
+    @PostMapping("/register")
+    public ResponseEntity<?> registerToSystem(@RequestBody @Valid RegisterDTO dto) {
+        return service.register(dto);
     }
 
-    @GetMapping("/user/{userId}")
-    public ResponseEntity<?> getUser(@PathVariable("userId") UUID id) {
-        return service.getUser(id);
+    @PostMapping("/verify")
+    public ResponseEntity<?> verifyEmail(@RequestParam(name = "email") String email, @RequestParam(name = "emailCode") String emailCode) {
+        return service.verifyEmail(email, emailCode);
     }
 }

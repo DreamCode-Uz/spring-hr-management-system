@@ -87,4 +87,8 @@ public class AuthService implements UserDetailsService {
 //        SEND EMAIL
         return ok("Email tasdiqlash code xato. Biz emailingizga qayta link jo'natdik");
     }
+
+    public ResponseEntity<?> register(RegisterDTO dto) {
+        return null;
+    }
 }
