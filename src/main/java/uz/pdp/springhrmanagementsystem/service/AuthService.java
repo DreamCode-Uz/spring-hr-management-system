@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -20,8 +21,10 @@ import uz.pdp.springhrmanagementsystem.payload.RegisterDTO;
 import uz.pdp.springhrmanagementsystem.payload.response.UserResponse;
 import uz.pdp.springhrmanagementsystem.repository.RoleRepository;
 import uz.pdp.springhrmanagementsystem.repository.UserRepository;
+import uz.pdp.springhrmanagementsystem.security.jwt.JWTFilter;
 import uz.pdp.springhrmanagementsystem.security.jwt.JWTProvider;
 
+import javax.servlet.http.HttpServletRequest;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -90,5 +93,15 @@ public class AuthService implements UserDetailsService {
 
     public ResponseEntity<?> register(RegisterDTO dto) {
         return null;
+    }
+
+    public ResponseEntity<?> getMe(HttpServletRequest request) {
+        User user = repository.getReferenceById(UUID.fromString(jwtProvider.getClaimsObjectFromToken(getToken(request)).getId()));
+        return ok(new UserResponse(user));
+    }
+
+    public String getToken(HttpServletRequest request) {
+        final String header = request.getHeader(HttpHeaders.AUTHORIZATION);
+        return header.replace("Bearer ", "");
     }
 }
