@@ -8,11 +8,13 @@ import uz.pdp.springhrmanagementsystem.entity.User;
 
 import java.sql.Timestamp;
 import java.util.Set;
+import java.util.UUID;
 
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
 public class UserResponse {
+    private UUID id;
     private String firstname;
     private String lastname;
     private String email;
@@ -21,6 +23,7 @@ public class UserResponse {
     private Timestamp updatedAt;
 
     public UserResponse(User user) {
+        this.id = user.getId();
         this.firstname = user.getFirstname();
         this.lastname = user.getLastname();
         this.email = user.getEmail();

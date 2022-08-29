@@ -19,14 +19,14 @@ public class UserController {
         this.service = service;
     }
 
+    @GetMapping
     @PreAuthorize(value = "hasAnyAuthority('ROLE_DIRECTOR', 'ROLE_MANAGER')")
-    @GetMapping("")
     public ResponseEntity<?> getAllUser(@RequestParam(name = "page", defaultValue = "0") Integer page, @RequestParam(name = "size", defaultValue = "10") Integer size) {
         return service.getUsers(page, size);
     }
 
-    @PreAuthorize(value = "hasAnyAuthority('ROLE_DIRECTOR', 'ROLE_MANAGER')")
     @GetMapping("/{userId}")
+    @PreAuthorize(value = "hasAnyAuthority('ROLE_DIRECTOR', 'ROLE_MANAGER')")
     public ResponseEntity<?> getUser(@PathVariable("userId") UUID id) {
         return service.getUser(id);
     }
@@ -34,6 +34,6 @@ public class UserController {
     @GetMapping("/me")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<?> getMe(HttpServletRequest request) {
-        return null;
+        return service.getMe(request);
     }
 }
