@@ -12,8 +12,11 @@ public class SpringSecurityAuditingAware implements AuditorAware<UUID> {
     @Override
     public Optional<UUID> getCurrentAuditor() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication == null || !authentication.isAuthenticated())
-            return Optional.empty();
-        return Optional.of(((User) authentication.getPrincipal()).getId());
+
+        if (authentication != null && authentication.isAuthenticated() && !"anonymousUser".equals(authentication.getPrincipal())) {
+            User user = (User) authentication.getPrincipal();
+            return Optional.of(user.getId());
+        }
+        return Optional.empty();
     }
 }

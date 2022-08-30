@@ -7,6 +7,7 @@ import uz.pdp.springhrmanagementsystem.payload.LoginDTO;
 import uz.pdp.springhrmanagementsystem.payload.RegisterDTO;
 import uz.pdp.springhrmanagementsystem.service.AuthService;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
 import java.util.UUID;
 
@@ -23,11 +24,6 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<?> loginToSystem(@RequestBody @Valid LoginDTO dto) {
         return service.login(dto);
-    }
-
-    @PostMapping("/register")
-    public ResponseEntity<?> registerToSystem(@RequestBody @Valid RegisterDTO dto) {
-        return service.register(dto);
     }
 
     @PostMapping("/verify")

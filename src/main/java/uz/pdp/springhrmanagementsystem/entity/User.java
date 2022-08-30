@@ -1,5 +1,6 @@
 package uz.pdp.springhrmanagementsystem.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -7,6 +8,7 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 import org.springframework.data.annotation.CreatedBy;
 import org.springframework.data.annotation.LastModifiedBy;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
@@ -20,6 +22,7 @@ import java.util.UUID;
 @NoArgsConstructor
 @Data
 @Entity(name = "users")
+@EntityListeners(AuditingEntityListener.class)
 public class User implements UserDetails {
 
     @Id
@@ -38,6 +41,7 @@ public class User implements UserDetails {
     private String emailCode;
 
     @Column(nullable = false)
+    @JsonIgnore
     private String password;
 
     @ManyToMany

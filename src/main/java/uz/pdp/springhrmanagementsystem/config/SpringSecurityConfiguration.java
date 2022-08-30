@@ -25,7 +25,7 @@ import java.util.UUID;
 @Configuration
 @EnableWebSecurity
 @EnableJpaAuditing(auditorAwareRef = "auditorAware")
-@EnableGlobalMethodSecurity(prePostEnabled = true)
+@EnableGlobalMethodSecurity(prePostEnabled = true, securedEnabled = true)
 public class SpringSecurityConfiguration {
 
     private final AuthService authService;
@@ -57,7 +57,7 @@ public class SpringSecurityConfiguration {
         http
                 .csrf().disable()
                 .authorizeRequests()
-                .antMatchers("/api/auth/login", "/api/auth/register", "/api/auth/verify").permitAll()
+                .antMatchers("/api/auth/login", "/api/auth/verify").permitAll()
                 .anyRequest()
                 .authenticated()
                 .and()

@@ -1,5 +1,6 @@
 package uz.pdp.springhrmanagementsystem.service;
 
+import io.jsonwebtoken.Claims;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.data.domain.Page;
@@ -14,22 +15,25 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import uz.pdp.springhrmanagementsystem.entity.Role;
 import uz.pdp.springhrmanagementsystem.entity.User;
+import uz.pdp.springhrmanagementsystem.entity.enums.RoleList;
 import uz.pdp.springhrmanagementsystem.payload.LoginDTO;
 import uz.pdp.springhrmanagementsystem.payload.RegisterDTO;
 import uz.pdp.springhrmanagementsystem.payload.response.UserResponse;
 import uz.pdp.springhrmanagementsystem.repository.RoleRepository;
 import uz.pdp.springhrmanagementsystem.repository.UserRepository;
-import uz.pdp.springhrmanagementsystem.security.jwt.JWTFilter;
 import uz.pdp.springhrmanagementsystem.security.jwt.JWTProvider;
 
 import javax.servlet.http.HttpServletRequest;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.springframework.http.ResponseEntity.*;
+import static uz.pdp.springhrmanagementsystem.entity.enums.RoleList.ROLE_DIRECTOR;
+import static uz.pdp.springhrmanagementsystem.entity.enums.RoleList.ROLE_MANAGER;
 
 @Service
 public class AuthService implements UserDetailsService {
@@ -38,12 +42,15 @@ public class AuthService implements UserDetailsService {
     private final AuthenticationManager authenticationManager;
     private final JWTProvider jwtProvider;
 
+    private final PasswordEncoder passwordEncoder;
+
     @Autowired
-    public AuthService(UserRepository repository, RoleRepository roleRepository, @Lazy AuthenticationManager authenticationManager, JWTProvider jwtProvider) {
+    public AuthService(UserRepository repository, RoleRepository roleRepository, @Lazy AuthenticationManager authenticationManager, JWTProvider jwtProvider, @Lazy PasswordEncoder passwordEncoder) {
         this.repository = repository;
         this.roleRepository = roleRepository;
         this.authenticationManager = authenticationManager;
         this.jwtProvider = jwtProvider;
+        this.passwordEncoder = passwordEncoder;
     }
 
     @Override
@@ -64,10 +71,48 @@ public class AuthService implements UserDetailsService {
         return status(HttpStatus.NOT_FOUND).body("User not found");
     }
 
-    public ResponseEntity<?> saveUser(RegisterDTO dto) {
-        return null;
+    public ResponseEntity<?> saveUser(RegisterDTO dto, HttpServletRequest request) {
+        if (repository.existsByEmail(dto.getEmail()))
+            return status(HttpStatus.CONFLICT).body("Email has already been registered");
+        Claims claims = jwtProvider.getClaimsObjectFromToken(getToken(request));
+        Optional<User> optionalUser = repository.findUserByEmailAndId(claims.getSubject(), UUID.fromString(claims.getId()));
+        if (!optionalUser.isPresent())
+            return status(401).body("There was a problem with your access rights. Please log in again :)");
+        Set<Role> roles = checkRole(optionalUser.get(), dto);
+        if (roles.size() == 0) return badRequest().body("The role was entered incorrectly");
+        User user = new User(dto.getFirstname(), dto.getLastname(), dto.getEmail(), passwordEncoder.encode(dto.getPassword()), roles);
+        user.setEnabled(true);
+        return status(HttpStatus.CREATED).body(new UserResponse(repository.save(repository.save(user))));
     }
 
+    public boolean checkRole(User user, RoleList role) {
+        for (Role userRole : user.getRoles()) {
+            if (userRole.getRole().equals(role)) return true;
+        }
+        return false;
+    }
+
+    public Set<Role> checkRole(User user, RegisterDTO dto) {
+        Set<Role> roles = new HashSet<>();
+        if (checkRole(user, ROLE_DIRECTOR)) {
+            for (Integer roleId : dto.getRole()) {
+                Optional<Role> optionalRole = roleRepository.findById(roleId);
+                optionalRole.ifPresent(role -> {
+                    if (role.getRole() != ROLE_DIRECTOR) roles.add(role);
+                });
+            }
+        } else if (checkRole(user, ROLE_MANAGER)) {
+            for (Integer roleId : dto.getRole()) {
+                Optional<Role> optionalRole = roleRepository.findById(roleId);
+                optionalRole.ifPresent(role -> {
+                    if (role.getRole() != ROLE_DIRECTOR && role.getRole() != ROLE_MANAGER) roles.add(role);
+                });
+            }
+        }
+        return roles;
+    }
+
+    //    FOR AUTH
     public ResponseEntity<?> login(LoginDTO dto) {
         try {
             Authentication authenticate = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(dto.getEmail(), dto.getPassword()));
@@ -81,18 +126,14 @@ public class AuthService implements UserDetailsService {
         Optional<User> optionalUser = repository.findUserByEmail(email);
         if (!optionalUser.isPresent()) return notFound().build();
         User user = optionalUser.get();
-        if (user.isEnabled()) return ok("Account allaqachon activelashtirilgan");
+        if (user.isEnabled()) return status(HttpStatus.CONFLICT).body("Account is already activated");
         if (user.getEmailCode().equals(emailCode)) {
             user.setEmailCode(null);
             repository.save(user);
-            return ok("Account muvaffaqiyatli activelashtirildi.");
+            return ok("Account has been successfully activated.");
         }
 //        SEND EMAIL
-        return ok("Email tasdiqlash code xato. Biz emailingizga qayta link jo'natdik");
-    }
-
-    public ResponseEntity<?> register(RegisterDTO dto) {
-        return null;
+        return ok("Email verification code error. We have sent the link back to your email");
     }
 
     public ResponseEntity<?> getMe(HttpServletRequest request) {
