@@ -12,14 +12,17 @@ import java.util.UUID;
 public class TaskDTO {
     @NotBlank
     private String name;
+
     @NotBlank
     private String description;
+
     @NotNull
     @DateTimeFormat(pattern = "yyyy-MM-dd")
     private Date deadline;
+
     @NotNull
     private UUID ownerId;
 
     @NotNull
-    private Integer id;
+    private Integer statusId;
 }
