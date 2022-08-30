@@ -6,10 +6,12 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import uz.pdp.springhrmanagementsystem.entity.InOutStatus;
 import uz.pdp.springhrmanagementsystem.entity.Role;
 import uz.pdp.springhrmanagementsystem.entity.TaskStatus;
 import uz.pdp.springhrmanagementsystem.entity.User;
 import uz.pdp.springhrmanagementsystem.entity.enums.RoleList;
+import uz.pdp.springhrmanagementsystem.repository.InOutStatusRepository;
 import uz.pdp.springhrmanagementsystem.repository.RoleRepository;
 import uz.pdp.springhrmanagementsystem.repository.TaskStatusRepository;
 import uz.pdp.springhrmanagementsystem.repository.UserRepository;
@@ -27,15 +29,17 @@ public class SpringHrManagementSystemApplication implements CommandLineRunner {
     private final TaskStatusRepository statusRepository;
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final InOutStatusRepository inOutStatusRepository;
     @Value("${spring.custom.jpa.data.initializer.mode}")
     private String initializer;
 
     @Autowired
-    public SpringHrManagementSystemApplication(RoleRepository roleRepository, TaskStatusRepository statusRepository, UserRepository userRepository, PasswordEncoder passwordEncoder) {
+    public SpringHrManagementSystemApplication(RoleRepository roleRepository, TaskStatusRepository statusRepository, UserRepository userRepository, PasswordEncoder passwordEncoder, InOutStatusRepository inOutStatusRepository) {
         this.roleRepository = roleRepository;
         this.statusRepository = statusRepository;
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
+        this.inOutStatusRepository = inOutStatusRepository;
     }
 
     @Override
@@ -51,6 +55,10 @@ public class SpringHrManagementSystemApplication implements CommandLineRunner {
                     new TaskStatus(null, TASK_NEW),
                     new TaskStatus(null, TASK_PROGRESS),
                     new TaskStatus(null, TASK_COMPLETED)
+            ));
+            inOutStatusRepository.saveAll(Arrays.asList(
+                    new InOutStatus(null, uz.pdp.springhrmanagementsystem.entity.enums.InOutStatus.INPUT_STATUS),
+                    new InOutStatus(null, uz.pdp.springhrmanagementsystem.entity.enums.InOutStatus.OUTPUT_STATUS)
             ));
             Optional<Role> roleByRole = roleRepository.findRoleByRole(RoleList.ROLE_DIRECTOR);
             User user = new User("John", "Doe", "john@mail.com", passwordEncoder.encode("root12345"), Collections.singleton(roleByRole.get()));

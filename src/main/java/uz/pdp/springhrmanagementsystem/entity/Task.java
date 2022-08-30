@@ -41,6 +41,9 @@ public class Task {
 
     private boolean acceptedByOwner = false;
 
+    @ManyToOne
+    private User owner;
+
     @Column(updatable = false)
     @CreationTimestamp
     private Timestamp createdAt;
