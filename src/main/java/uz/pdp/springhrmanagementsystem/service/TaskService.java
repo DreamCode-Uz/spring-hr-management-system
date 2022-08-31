@@ -6,6 +6,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import uz.pdp.springhrmanagementsystem.entity.Role;
 import uz.pdp.springhrmanagementsystem.entity.Task;
 import uz.pdp.springhrmanagementsystem.entity.TaskStatus;
 import uz.pdp.springhrmanagementsystem.entity.User;
@@ -21,6 +22,7 @@ import java.util.Date;
 import java.util.Optional;
 import java.util.UUID;
 
+import static org.springframework.http.HttpStatus.CREATED;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static org.springframework.http.ResponseEntity.*;
 
@@ -56,18 +58,73 @@ public class TaskService {
 
     public ResponseEntity<?> addTask(TaskDTO dto, HttpServletRequest request) {
         Optional<User> optionalUser = userRepository.findById(dto.getOwnerId());
-        if (!optionalUser.isPresent()) status(NOT_FOUND).body("Owner not found");
+        if (!optionalUser.isPresent()) return status(NOT_FOUND).body("Owner not found");
         Optional<TaskStatus> statusOptional = statusRepository.findById(dto.getStatusId());
-        if (!statusOptional.isPresent()) status(NOT_FOUND).body("Task status not found");
+        if (!statusOptional.isPresent()) return status(NOT_FOUND).body("Task status not found");
         if ((dto.getDeadline().getTime() - new Date().getTime()) <= 0)
-            badRequest().body("The date range was entered incorrectly");
-        checkPermission(request, RoleList.ROLE_DIRECTOR);
-        return ok("ok");
+            return badRequest().body("The date range was entered incorrectly");
+        Claims claims = jwt.getClaimsObjectFromToken(request.getHeader(HttpHeaders.AUTHORIZATION).substring(7));
+        Optional<User> optionalCurrentUser = userRepository.findUserByEmailAndId(claims.getSubject(), UUID.fromString(claims.getId()));
+        if (!optionalCurrentUser.isPresent())
+            return status(401).body("There was a problem with your access rights. Please log in again :)");
+        Task task = checkRole(optionalCurrentUser.get(), optionalUser.get(), dto);
+        if (task == null) return badRequest().build();
+        task.setStatus(statusOptional.get().getName());
+        return status(CREATED).body(repository.save(task));
+    }
+
+    public ResponseEntity<?> editTask(UUID taskId, TaskDTO dto, HttpServletRequest request) {
+        Optional<Task> optionalTask = repository.findById(taskId);
+        if (!optionalTask.isPresent()) return status(NOT_FOUND).body("Task not found");
+        Optional<User> optionalUser = userRepository.findById(dto.getOwnerId());
+        if (!optionalUser.isPresent()) return status(NOT_FOUND).body("Owner not found");
+        Optional<TaskStatus> statusOptional = statusRepository.findById(dto.getStatusId());
+        if (!statusOptional.isPresent()) return status(NOT_FOUND).body("Task status not found");
+        if ((dto.getDeadline().getTime() - new Date().getTime()) <= 0)
+            return badRequest().body("The date range was entered incorrectly");
+        Claims claims = jwt.getClaimsObjectFromToken(request.getHeader(HttpHeaders.AUTHORIZATION).substring(7));
+        Optional<User> optionalCurrentUser = userRepository.findUserByEmailAndId(claims.getSubject(), UUID.fromString(claims.getId()));
+        if (!optionalCurrentUser.isPresent())
+            return status(401).body("There was a problem with your access rights. Please log in again :)");
+        Task task = checkRole(optionalCurrentUser.get(), optionalUser.get(), dto);
+        if (task == null) return badRequest().build();
+        Task t = optionalTask.get();
+        task.setStatus(statusOptional.get().getName());
+        task.setAcceptedByOwner(t.isAcceptedByOwner());
+        task.setId(taskId);
+        task.setCreatedAt(t.getCreatedAt());
+        task.setCreatedBy(t.getCreatedBy());
+        return ok(repository.save(task));
     }
 
     //    ACTION
-    public boolean checkPermission(HttpServletRequest request, RoleList roleName) {
-        Claims claims = jwt.getClaimsObjectFromToken(request.getHeader(HttpHeaders.AUTHORIZATION).substring(7));
+    public Task checkRole(User currentUser, User owner, TaskDTO dto) {
+        boolean check = true;
+        if (checkRole(currentUser, RoleList.ROLE_DIRECTOR)) {
+            for (Role role : owner.getRoles()) {
+                if (role.getRole() == RoleList.ROLE_DIRECTOR) {
+                    check = false;
+                    break;
+                }
+            }
+        } else {
+            for (Role role : owner.getRoles()) {
+                if (role.getRole() == RoleList.ROLE_DIRECTOR || role.getRole() == RoleList.ROLE_MANAGER) {
+                    check = false;
+                    break;
+                }
+            }
+        }
+        if (check) {
+            return new Task(dto.getName(), dto.getDescription(), dto.getDeadline(), owner);
+        }
+        return null;
+    }
+
+    public boolean checkRole(User user, RoleList roleName) {
+        for (Role role : user.getRoles()) {
+            if (role.getRole().equals(roleName)) return true;
+        }
         return false;
     }
 }

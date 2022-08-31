@@ -57,4 +57,11 @@ public class Task {
 
     @LastModifiedBy
     private UUID updatedBy;
+
+    public Task(String name, String description, Date endTime, User owner) {
+        this.name = name;
+        this.description = description;
+        this.endTime = endTime;
+        this.owner = owner;
+    }
 }
