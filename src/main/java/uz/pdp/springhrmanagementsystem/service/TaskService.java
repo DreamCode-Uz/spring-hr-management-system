@@ -112,6 +112,7 @@ public class TaskService {
         Task task = optionalTask.get();
         task.setAcceptedByOwner(true);
         task.setStatus(TASK_PROGRESS);
+//        ANONIM USER HOLATDA ACTIVLASHTIRILGANI UCHUN AYNAN UNING IDISI DATABASEGA YOZIB QO'YILADI
         task.setUpdatedBy(user.getId());
         repository.save(task);
         return ok("Task successfully activated");

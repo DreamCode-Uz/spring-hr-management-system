@@ -51,4 +51,10 @@ public class TaskController {
     public ResponseEntity<?> updateTask(@PathVariable("taskId") UUID uuid, @RequestBody @Valid TaskDTO dto, HttpServletRequest request) {
         return service.editTask(uuid, dto, request);
     }
+
+    @GetMapping("/{taskId}/{encodedEmail}")
+    @PreAuthorize("permitAll()")
+    public ResponseEntity<?> activatedTask(@PathVariable("taskId") UUID id, @PathVariable("encodedEmail") String email) {
+        return service.activatedTask(id, email);
+    }
 }
