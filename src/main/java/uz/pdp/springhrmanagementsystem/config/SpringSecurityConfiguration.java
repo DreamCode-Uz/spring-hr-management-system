@@ -77,7 +77,7 @@ public class SpringSecurityConfiguration {
     @Bean
     public JavaMailSender javaMailSender() {
         JavaMailSenderImpl mailSender = new JavaMailSenderImpl();
-        mailSender.setHost("smtp.gmail.com");
+        mailSender.setHost("smtp.mailgun.org");
         mailSender.setPort(587);
         mailSender.setUsername(email);
         mailSender.setPassword(password);

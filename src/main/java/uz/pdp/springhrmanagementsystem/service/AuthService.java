@@ -37,15 +37,16 @@ import static uz.pdp.springhrmanagementsystem.entity.enums.RoleList.ROLE_MANAGER
 
 @Service
 public class AuthService implements UserDetailsService {
+    private final SendMailService mailService;
     private final UserRepository repository;
     private final RoleRepository roleRepository;
     private final AuthenticationManager authenticationManager;
     private final JWTProvider jwtProvider;
-
     private final PasswordEncoder passwordEncoder;
 
     @Autowired
-    public AuthService(UserRepository repository, RoleRepository roleRepository, @Lazy AuthenticationManager authenticationManager, JWTProvider jwtProvider, @Lazy PasswordEncoder passwordEncoder) {
+    public AuthService(SendMailService mailService, UserRepository repository, RoleRepository roleRepository, @Lazy AuthenticationManager authenticationManager, JWTProvider jwtProvider, @Lazy PasswordEncoder passwordEncoder) {
+        this.mailService = mailService;
         this.repository = repository;
         this.roleRepository = roleRepository;
         this.authenticationManager = authenticationManager;
@@ -81,7 +82,9 @@ public class AuthService implements UserDetailsService {
         Set<Role> roles = checkRole(optionalUser.get(), dto);
         if (roles.size() == 0) return badRequest().body("The role was entered incorrectly");
         User user = new User(dto.getFirstname(), dto.getLastname(), dto.getEmail(), passwordEncoder.encode(dto.getPassword()), roles);
-        user.setEnabled(true);
+        String emailCode = UUID.randomUUID().toString();
+        user.setEmailCode(emailCode);
+        mailService.sendEmail("dreamcoder999@gmail.com", "Link to activate your email", String.format("http://localhost:8080/api/auth/verify?email=%s&emailCode=%s", dto.getEmail(), emailCode));
         return status(HttpStatus.CREATED).body(new UserResponse(repository.save(repository.save(user))));
     }
 
