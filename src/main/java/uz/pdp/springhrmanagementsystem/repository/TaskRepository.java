@@ -10,5 +10,5 @@ import java.util.UUID;
 
 @Repository
 public interface TaskRepository extends JpaRepository<Task, UUID> {
-    boolean existsByOwner_IdAndId(UUID owner_id, UUID id);
+    boolean existsByOwner_EmailAndId(String owner_email, UUID id);
 }

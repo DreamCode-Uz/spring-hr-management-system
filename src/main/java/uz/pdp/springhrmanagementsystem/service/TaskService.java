@@ -18,6 +18,9 @@ import uz.pdp.springhrmanagementsystem.repository.UserRepository;
 import uz.pdp.springhrmanagementsystem.security.jwt.JWTProvider;
 
 import javax.servlet.http.HttpServletRequest;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import java.util.Date;
 import java.util.Optional;
 import java.util.UUID;
@@ -25,6 +28,7 @@ import java.util.UUID;
 import static org.springframework.http.HttpStatus.CREATED;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static org.springframework.http.ResponseEntity.*;
+import static uz.pdp.springhrmanagementsystem.entity.enums.TaskStatus.*;
 
 @Service
 public class TaskService {
@@ -95,6 +99,22 @@ public class TaskService {
         task.setCreatedAt(t.getCreatedAt());
         task.setCreatedBy(t.getCreatedBy());
         return ok(repository.save(task));
+    }
+
+    public ResponseEntity<?> activatedTask(UUID taskId, String encodedEmail) {
+        String email = new String(Base64.getDecoder().decode(encodedEmail), StandardCharsets.UTF_8);
+        System.out.println("Email-Decoded: " + email);
+        Optional<Task> optionalTask = repository.findById(taskId);
+        if (!optionalTask.isPresent()) return badRequest().body("Task not found");
+        if (!repository.existsByOwner_EmailAndId(email, taskId))
+            return badRequest().body("Afsuski bu task siz uchun emas :(");
+        User user = userRepository.getUserByEmail(email);
+        Task task = optionalTask.get();
+        task.setAcceptedByOwner(true);
+        task.setStatus(TASK_PROGRESS);
+        task.setUpdatedBy(user.getId());
+        repository.save(task);
+        return ok("Task successfully activated");
     }
 
     //    ACTION
