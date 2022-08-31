@@ -52,7 +52,7 @@ public class TaskController {
         return service.editTask(uuid, dto, request);
     }
 
-    @GetMapping("/{taskId}/{encodedEmail}")
+    @GetMapping("activated/{taskId}/{encodedEmail}")
     @PreAuthorize("permitAll()")
     public ResponseEntity<?> activatedTask(@PathVariable("taskId") UUID id, @PathVariable("encodedEmail") String email) {
         return service.activatedTask(id, email);
