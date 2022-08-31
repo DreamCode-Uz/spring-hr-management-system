@@ -18,15 +18,13 @@ import uz.pdp.springhrmanagementsystem.repository.UserRepository;
 import uz.pdp.springhrmanagementsystem.security.jwt.JWTProvider;
 
 import javax.servlet.http.HttpServletRequest;
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.Date;
 import java.util.Optional;
 import java.util.UUID;
 
-import static org.springframework.http.HttpStatus.CREATED;
-import static org.springframework.http.HttpStatus.NOT_FOUND;
+import static org.springframework.http.HttpStatus.*;
 import static org.springframework.http.ResponseEntity.*;
 import static uz.pdp.springhrmanagementsystem.entity.enums.TaskStatus.*;
 
@@ -36,13 +34,15 @@ public class TaskService {
     private final TaskStatusRepository statusRepository;
     private final UserRepository userRepository;
     private final JWTProvider jwt;
+    private final SendMailService mailService;
 
     @Autowired
-    public TaskService(TaskRepository repository, TaskStatusRepository statusRepository, UserRepository userRepository, JWTProvider jwt) {
+    public TaskService(TaskRepository repository, TaskStatusRepository statusRepository, UserRepository userRepository, JWTProvider jwt, SendMailService mailService) {
         this.repository = repository;
         this.statusRepository = statusRepository;
         this.userRepository = userRepository;
         this.jwt = jwt;
+        this.mailService = mailService;
     }
 
     public ResponseEntity<?> getAllTasks(Integer page, Integer size) {
@@ -74,7 +74,15 @@ public class TaskService {
         Task task = checkRole(optionalCurrentUser.get(), optionalUser.get(), dto);
         if (task == null) return badRequest().build();
         task.setStatus(statusOptional.get().getName());
-        return status(CREATED).body(repository.save(task));
+        task = repository.save(task);
+        mailService.sendEmail(task.getOwner().getEmail(),
+                "A link to activate the task provided for you.",
+                String.format("http://localhost:8080/api/task/activated/%s/%s",
+                        task.getId(),
+                        Base64.getEncoder().encodeToString(task.getOwner().getEmail().getBytes(StandardCharsets.UTF_8))
+                )
+        );
+        return status(CREATED).body("Task successfully added");
     }
 
     public ResponseEntity<?> editTask(UUID taskId, TaskDTO dto, HttpServletRequest request) {
@@ -102,14 +110,15 @@ public class TaskService {
     }
 
     public ResponseEntity<?> activatedTask(UUID taskId, String encodedEmail) {
-        String email = new String(Base64.getDecoder().decode(encodedEmail), StandardCharsets.UTF_8);
-        System.out.println("Email-Decoded: " + email);
         Optional<Task> optionalTask = repository.findById(taskId);
         if (!optionalTask.isPresent()) return badRequest().body("Task not found");
-        if (!repository.existsByOwner_EmailAndId(email, taskId))
-            return badRequest().body("Afsuski bu task siz uchun emas :(");
-        User user = userRepository.getUserByEmail(email);
         Task task = optionalTask.get();
+        if (task.isAcceptedByOwner()) return status(CONFLICT).body("Task already activated");
+        String email = new String(Base64.getDecoder().decode(encodedEmail), StandardCharsets.UTF_8);
+        if (!repository.existsByOwner_EmailAndId(email, taskId)) {
+            return badRequest().body("Afsuski bu task siz uchun emas :(");
+        }
+        User user = userRepository.getUserByEmail(email);
         task.setAcceptedByOwner(true);
         task.setStatus(TASK_PROGRESS);
 //        ANONIM USER HOLATDA ACTIVLASHTIRILGANI UCHUN AYNAN UNING IDISI DATABASEGA YOZIB QO'YILADI

@@ -84,7 +84,11 @@ public class AuthService implements UserDetailsService {
         User user = new User(dto.getFirstname(), dto.getLastname(), dto.getEmail(), passwordEncoder.encode(dto.getPassword()), roles);
         String emailCode = UUID.randomUUID().toString();
         user.setEmailCode(emailCode);
-        mailService.sendEmail("dreamcoder999@gmail.com", "Link to activate your email", String.format("http://localhost:8080/api/auth/verify?email=%s&emailCode=%s", dto.getEmail(), emailCode));
+        boolean email = mailService.sendEmail(
+                dto.getEmail(), "Link to activate your email",
+                String.format("http://localhost:8080/api/auth/verify?email=%s&emailCode=%s",
+                        dto.getEmail(), emailCode));
+        if (!email) return badRequest().build();
         return status(HttpStatus.CREATED).body(new UserResponse(repository.save(repository.save(user))));
     }
 
@@ -132,10 +136,14 @@ public class AuthService implements UserDetailsService {
         if (user.isEnabled()) return status(HttpStatus.CONFLICT).body("Account is already activated");
         if (user.getEmailCode().equals(emailCode)) {
             user.setEmailCode(null);
+            user.setEnabled(true);
             repository.save(user);
             return ok("Account has been successfully activated.");
         }
-//        SEND EMAIL
+        mailService.sendEmail(
+                user.getEmail(), "Link to activate your email",
+                String.format("http://localhost:8080/api/auth/verify?email=%s&emailCode=%s",
+                        user.getEmail(), user.getEmailCode()));
         return ok("Email verification code error. We have sent the link back to your email");
     }
 

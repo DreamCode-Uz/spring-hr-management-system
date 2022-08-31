@@ -65,7 +65,7 @@ public class SpringSecurityConfiguration {
         http
                 .csrf().disable()
                 .authorizeRequests()
-                .antMatchers("/api/auth/login", "/api/auth/verify").permitAll()
+                .antMatchers("/api/auth/*", "/api/task/activated/**").permitAll()
                 .anyRequest()
                 .authenticated()
                 .and()
@@ -77,7 +77,7 @@ public class SpringSecurityConfiguration {
     @Bean
     public JavaMailSender javaMailSender() {
         JavaMailSenderImpl mailSender = new JavaMailSenderImpl();
-        mailSender.setHost("smtp.mailgun.org");
+        mailSender.setHost("smtp.gmail.com");
         mailSender.setPort(587);
         mailSender.setUsername(email);
         mailSender.setPassword(password);

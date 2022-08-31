@@ -37,6 +37,7 @@ public class Task {
     private Date endTime;
 
     @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
     private TaskStatus status;
 
     private boolean acceptedByOwner = false;
