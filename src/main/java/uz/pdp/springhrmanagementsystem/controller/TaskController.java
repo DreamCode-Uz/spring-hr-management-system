@@ -10,6 +10,7 @@ import uz.pdp.springhrmanagementsystem.service.TaskService;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
+import javax.validation.constraints.NotNull;
 import java.util.UUID;
 
 @RestController
@@ -53,8 +54,15 @@ public class TaskController {
     }
 
     @GetMapping("activated/{taskId}/{encodedEmail}")
-    @PreAuthorize("permitAll()")
     public ResponseEntity<?> activatedTask(@PathVariable("taskId") UUID id, @PathVariable("encodedEmail") String email) {
         return service.activatedTask(id, email);
+    }
+
+    //    isCompleted => boolean qiymat kiritiladi
+    //    Bu urlga faqat vazifa olishi mumkin bo'lgan userlar kira oladi
+    @GetMapping("/complete/{taskId}")
+    @Secured({"ROLE_MANAGER", "ROLE_OWNER"})
+    public ResponseEntity<?> userTaskActivated(@PathVariable(name = "taskId") UUID id, HttpServletRequest request) {
+        return service.userTaskIsActivated(id, request);
     }
 }

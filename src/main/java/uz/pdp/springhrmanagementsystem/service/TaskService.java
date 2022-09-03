@@ -1,6 +1,7 @@
 package uz.pdp.springhrmanagementsystem.service;
 
 import io.jsonwebtoken.Claims;
+import org.hibernate.resource.beans.container.spi.BeanContainer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpHeaders;
@@ -115,9 +116,8 @@ public class TaskService {
         Task task = optionalTask.get();
         if (task.isAcceptedByOwner()) return status(CONFLICT).body("Task already activated");
         String email = new String(Base64.getDecoder().decode(encodedEmail), StandardCharsets.UTF_8);
-        if (!repository.existsByOwner_EmailAndId(email, taskId)) {
+        if (!repository.existsByOwner_EmailAndId(email, taskId))
             return badRequest().body("Afsuski bu task siz uchun emas :(");
-        }
         User user = userRepository.getUserByEmail(email);
         task.setAcceptedByOwner(true);
         task.setStatus(TASK_PROGRESS);
@@ -156,5 +156,27 @@ public class TaskService {
             if (role.getRole().equals(roleName)) return true;
         }
         return false;
+    }
+
+    public ResponseEntity<?> userTaskIsActivated(UUID id, HttpServletRequest request) {
+        try {
+            Optional<Task> optionalTask = repository.findById(id);
+            if (!optionalTask.isPresent()) return status(NOT_FOUND).body("Task not found");
+            Claims claims = jwt.getClaimsObjectFromToken(request.getHeader(HttpHeaders.AUTHORIZATION).substring(7));
+            if (!repository.existsByOwner_EmailAndId(claims.getSubject(), id))
+                return badRequest().body("Vazifa sizniki emas yoki bazada mavjud emas");
+            Task task = optionalTask.get();
+            if (!task.isAcceptedByOwner()) return badRequest().body("Vazifa hali tasdiqlanmagan");
+            if (task.getStatus().equals(TASK_COMPLETED)) return status(CONFLICT).body("Task already activated");
+            task.setStatus(TASK_COMPLETED);
+            repository.save(task);
+            Optional<User> optionalUser = userRepository.findById(task.getCreatedBy());
+            optionalUser.ifPresent(user -> mailService.sendEmail(
+                    user.getEmail(), "Task completed", String.format("http://localhost:8080/api/task/%s", task.getId())
+            ));
+            return ok("Task successfully status add");
+        } catch (Exception e) {
+            return badRequest().build();
+        }
     }
 }
