@@ -58,11 +58,17 @@ public class TaskController {
         return service.activatedTask(id, email);
     }
 
-    //    isCompleted => boolean qiymat kiritiladi
     //    Bu urlga faqat vazifa olishi mumkin bo'lgan userlar kira oladi
     @GetMapping("/complete/{taskId}")
     @Secured({"ROLE_MANAGER", "ROLE_OWNER"})
     public ResponseEntity<?> userTaskActivated(@PathVariable(name = "taskId") UUID id, HttpServletRequest request) {
         return service.userTaskIsActivated(id, request);
+    }
+
+//    O'Z VAQTIDA BAJARILMAGAN VAZIFALAR TUGALLANMAGAN VAZIFALAR RO'YHATI
+    @GetMapping("/completed")
+    @Secured({"ROLE_DIRECTOR", "ROLE_MANAGER"})
+    public ResponseEntity<?> userTaskTimeActivated() {
+        return service.usersTaskIsCompletedTime();
     }
 }

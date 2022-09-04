@@ -6,15 +6,10 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import uz.pdp.springhrmanagementsystem.entity.InOutStatus;
-import uz.pdp.springhrmanagementsystem.entity.Role;
-import uz.pdp.springhrmanagementsystem.entity.TaskStatus;
-import uz.pdp.springhrmanagementsystem.entity.User;
+import uz.pdp.springhrmanagementsystem.entity.*;
+import uz.pdp.springhrmanagementsystem.entity.enums.MonthName;
 import uz.pdp.springhrmanagementsystem.entity.enums.RoleList;
-import uz.pdp.springhrmanagementsystem.repository.InOutStatusRepository;
-import uz.pdp.springhrmanagementsystem.repository.RoleRepository;
-import uz.pdp.springhrmanagementsystem.repository.TaskStatusRepository;
-import uz.pdp.springhrmanagementsystem.repository.UserRepository;
+import uz.pdp.springhrmanagementsystem.repository.*;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -27,6 +22,7 @@ import static uz.pdp.springhrmanagementsystem.entity.enums.TaskStatus.*;
 public class SpringHrManagementSystemApplication implements CommandLineRunner {
     private final RoleRepository roleRepository;
     private final TaskStatusRepository statusRepository;
+    private final MonthRepository monthRepository;
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final InOutStatusRepository inOutStatusRepository;
@@ -34,9 +30,10 @@ public class SpringHrManagementSystemApplication implements CommandLineRunner {
     private String initializer;
 
     @Autowired
-    public SpringHrManagementSystemApplication(RoleRepository roleRepository, TaskStatusRepository statusRepository, UserRepository userRepository, PasswordEncoder passwordEncoder, InOutStatusRepository inOutStatusRepository) {
+    public SpringHrManagementSystemApplication(RoleRepository roleRepository, TaskStatusRepository statusRepository, MonthRepository monthRepository, UserRepository userRepository, PasswordEncoder passwordEncoder, InOutStatusRepository inOutStatusRepository) {
         this.roleRepository = roleRepository;
         this.statusRepository = statusRepository;
+        this.monthRepository = monthRepository;
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.inOutStatusRepository = inOutStatusRepository;
@@ -64,6 +61,22 @@ public class SpringHrManagementSystemApplication implements CommandLineRunner {
             User user = new User("John", "Doe", "john@mail.com", passwordEncoder.encode("root12345"), Collections.singleton(roleByRole.get()));
             user.setEnabled(true);
             userRepository.save(user);
+            monthRepository.saveAll(
+                    Arrays.asList(
+                            new Month(null, MonthName.YANVAR),
+                            new Month(null, MonthName.FEVRAL),
+                            new Month(null, MonthName.MART),
+                            new Month(null, MonthName.APREL),
+                            new Month(null, MonthName.MAY),
+                            new Month(null, MonthName.IYUN),
+                            new Month(null, MonthName.IYUL),
+                            new Month(null, MonthName.AVGUST),
+                            new Month(null, MonthName.SENTABR),
+                            new Month(null, MonthName.OKTABR),
+                            new Month(null, MonthName.NOYABR),
+                            new Month(null, MonthName.DEKABR)
+                    )
+            );
         }
     }
 

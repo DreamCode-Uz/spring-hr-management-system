@@ -101,6 +101,8 @@ public class TaskService {
             return status(401).body("There was a problem with your access rights. Please log in again :)");
         Task task = checkRole(optionalCurrentUser.get(), optionalUser.get(), dto);
         if (task == null) return badRequest().build();
+        if (task.getStatus().equals(TASK_COMPLETED))
+            return status(CONFLICT).body("Vazifa bajarib bo'lingan uni tahrirlash endi mumkin emas");
         Task t = optionalTask.get();
         task.setStatus(statusOptional.get().getName());
         task.setAcceptedByOwner(t.isAcceptedByOwner());
@@ -169,6 +171,8 @@ public class TaskService {
             if (!task.isAcceptedByOwner()) return badRequest().body("Vazifa hali tasdiqlanmagan");
             if (task.getStatus().equals(TASK_COMPLETED)) return status(CONFLICT).body("Task already activated");
             task.setStatus(TASK_COMPLETED);
+            task.setCompletedTime(true);
+            if (task.getEndTime().getTime() - new Date().getTime() > 0) task.setCompletedTime(false);
             repository.save(task);
             Optional<User> optionalUser = userRepository.findById(task.getCreatedBy());
             optionalUser.ifPresent(user -> mailService.sendEmail(
@@ -178,5 +182,10 @@ public class TaskService {
         } catch (Exception e) {
             return badRequest().build();
         }
+    }
+
+    //    Ushbu qismda vazifa o'zvaqtida tuggallanmagan vazifalar qaytariladi
+    public ResponseEntity<?> usersTaskIsCompletedTime() {
+        return ok(repository.findAllByStatusAndCompletedTime(TASK_COMPLETED, false));
     }
 }

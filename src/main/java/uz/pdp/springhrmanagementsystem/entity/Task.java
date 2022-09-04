@@ -42,6 +42,8 @@ public class Task {
 
     private boolean acceptedByOwner = false;
 
+    private boolean completedTime;
+
     @ManyToOne
     private User owner;
 
